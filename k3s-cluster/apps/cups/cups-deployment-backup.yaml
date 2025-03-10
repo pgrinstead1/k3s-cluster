@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cups
+  namespace: cups
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: cups
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: cups
+    spec:
+      hostNetwork: true
+      nodeSelector:
+        kubernetes.io/hostname: "worker-node2"  # ✅ Ensures CUPS stays on worker-node2
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - worker-node2  # ✅ Hard enforcement of worker-node2
+      containers:
+        - name: cups
+          image: ydkn/cups:latest
+          imagePullPolicy: Always
+          command: ["/entrypoint.sh"]  # ✅ Set entrypoint to custom startup script
+          securityContext:
+            privileged: true  # ✅ Required for Avahi to manage networking properly
+          ports:
+            - containerPort: 631
+              hostPort: 631
+              name: cups
+          volumeMounts:
+            - mountPath: /etc/cups
+              name: cups-config
+            - mountPath: /var/lib/cups
+              name: cups-data
+            - mountPath: /var/log/cups
+              name: cups-logs
+            - mountPath: /dev/bus/usb
+              name: usb
+            - mountPath: /run/avahi-daemon  # ✅ Ensures Avahi can write to its runtime directory
+              name: avahi-run
+      volumes:
+        - name: cups-config
+          emptyDir: {}
+        - name: cups-data
+          persistentVolumeClaim:
+            claimName: cups-data
+        - name: cups-logs
+          emptyDir: {}
+        - name: usb
+          hostPath:
+            path: /dev/bus/usb
+        - name: avahi-run  # ✅ New volume for Avahi runtime files
+          emptyDir: {}

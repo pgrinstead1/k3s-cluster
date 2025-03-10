@@ -1,45 +1,43 @@
 # Kubernetes Cluster Configuration
 
-This repository contains Kubernetes manifests for deploying and managing applications in a k3s cluster.
+This repository contains the configuration files for a Kubernetes (k3s) cluster. It's organized by application type and configured for CI/CD deployment.
 
 ## Directory Structure
 
-```
-k3s-cluster/
-├── apps/         # Application deployments
-│   ├── coredns/  # CoreDNS configurations
-│   ├── cups/     # CUPS printing server
-│   ├── homebridge/ # Homebridge IoT bridge
-│   ├── metallb/  # MetalLB load balancer
-│   └── pihole/   # Pi-hole DNS server
-├── dns/
-│   └── external-dns/ # External DNS configuration
-└── manifests/
-    └── test/     # Test manifests
-```
+- `k3s-cluster/`: Main directory for all Kubernetes configurations
+  - `apps/`: Application-specific configurations
+    - `coredns/`: CoreDNS DNS server configurations
+    - `cups/`: CUPS printing server configurations
+    - `homebridge/`: Homebridge smart home configurations
+    - `pihole/`: Pi-hole DNS configurations
+    - `rancher/`: Rancher management configurations
+  - `dns/`: DNS-related configurations
+    - `external-dns/`: External DNS integration configurations
+  - `tests/`: Test configurations for validating deployments
 
 ## CI/CD Integration
 
-This repository is designed to work with CI/CD pipelines for automated deployments to the k3s cluster.
+This repository is set up with GitHub Actions for automated deployment to a Kubernetes cluster. The workflow validates configurations and applies them to the target cluster when changes are pushed.
 
-### Setup with GitLab CI/CD
+## Prerequisites
 
-1. Add a `.gitlab-ci.yml` file to the root of this repository.
-2. Configure the necessary CI/CD variables in your GitLab project settings.
-3. Set up a Kubernetes agent or runner with access to your cluster.
+- A running Kubernetes (k3s) cluster
+- kubectl configured to access the cluster
+- Access credentials configured as GitHub secrets (for CI/CD)
 
-### Setup with GitHub Actions
+## Usage
 
-1. Add workflow files to `.github/workflows/` directory.
-2. Configure GitHub Secrets for secure access to your cluster.
-3. Use actions like `kubectl-action` to deploy to the cluster.
+1. Clone this repository
+2. Make changes to the configuration files as needed
+3. Push changes to GitHub to trigger automatic deployment
+4. Monitor the GitHub Actions workflow for deployment status
 
-## Deployment Process
+## Manual Deployment
 
-The recommended deployment process is:
+To manually apply the configurations:
 
-1. Make changes to the manifests
-2. Commit and push to the repository
-3. CI/CD automatically validates the manifests
-4. Upon successful validation, changes are applied to the cluster
-
+```bash
+kubectl apply -f k3s-cluster/apps/coredns/
+kubectl apply -f k3s-cluster/apps/cups/
+# Repeat for other application directories
+```

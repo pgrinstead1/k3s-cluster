@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.25"],"port":53,"protocol":"TCP","serviceName":"pihole-secondary:pihole-secondary-dns","allNodes":false},{"addresses":["192.168.1.25"],"port":53,"protocol":"UDP","serviceName":"pihole-secondary:pihole-secondary-dns","allNodes":false}]'
+    meta.helm.sh/release-name: pihole-secondary
+    meta.helm.sh/release-namespace: pihole-secondary
+    metallb.io/ip-allocated-from-pool: default-pool
+  creationTimestamp: "2025-03-08T00:49:04Z"
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app: pihole
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: pihole
+    chart: pihole-2.29.0
+    heritage: Helm
+    release: pihole-secondary
+  name: pihole-secondary-dns
+  namespace: pihole-secondary
+  resourceVersion: "200862"
+  uid: 2e1d26d6-6221-4f59-81a5-cfee56fbe72c
+spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.43.247.200
+  clusterIPs:
+  - 10.43.247.200
+  externalTrafficPolicy: Local
+  healthCheckNodePort: 31922
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: dns
+    nodePort: 31532
+    port: 53
+    protocol: TCP
+    targetPort: dns
+  - name: dns-udp
+    nodePort: 31532
+    port: 53
+    protocol: UDP
+    targetPort: dns-udp
+  selector:
+    app: pihole
+    release: pihole-secondary
+  sessionAffinity: None
+  type: LoadBalancer
+status:
+  loadBalancer:
+    ingress:
+    - ip: 192.168.1.25
+      ipMode: VIP

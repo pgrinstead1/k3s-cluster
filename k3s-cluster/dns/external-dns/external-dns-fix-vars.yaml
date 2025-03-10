@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: external-dns-script
+  namespace: kube-system
+data:
+  update-dns.sh: |
+    #!/bin/sh
+    set -e
+    
+    ZONE_FILE="/etc/coredns/shared/k8s.local.db"
+    TEMP_FILE="/tmp/k8s.local.db.tmp"
+    DOMAIN="k8s.local"
+    INTERVAL="30"
+    CLUSTERIP=$(kubectl get svc -n kube-system kube-dns -o jsonpath='{.spec.clusterIP}')
+    
+    # Initialize zone file if it doesn't exist
+    if [ ! -f "${ZONE_FILE}" ]; then
+      echo "Creating initial zone file..."
+      cat > "${ZONE_FILE}" << EOL
+    $ORIGIN ${DOMAIN}.
+    $TTL 300
+    @ IN SOA ${DOMAIN}. hostmaster.${DOMAIN}. 1 300 300 300 300
+    @ IN NS ns1.${DOMAIN}.
+    ns1 IN A ${CLUSTERIP}
+    EOL
+    fi
+    
+    echo "Starting DNS record synchronization for Kubernetes services with domain ${DOMAIN}"
+    echo "Zone file: ${ZONE_FILE}"
+    echo "Update interval: ${INTERVAL} seconds"
+    
+    # Main loop
+    while true; do
+      echo "Scanning for services with external-dns.alpha.kubernetes.io/hostname annotation..."
+      
+      # Get services with the hostname annotation that match our domain
+      SERVICE_COUNT=0
+      
+      # Create a temporary file for the new zone file
+      cat > "${TEMP_FILE}" << EOL
+    $ORIGIN ${DOMAIN}.
+    $TTL 300
+    @ IN SOA ${DOMAIN}. hostmaster.${DOMAIN}. $(date +%s) 300 300 300 300
+    @ IN NS ns1.${DOMAIN}.
+    ns1 IN A ${CLUSTERIP}
+    EOL
+      
+      # Get all services with hostname annotation and a LoadBalancer IP
+      kubectl get services --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations["external-dns.alpha.kubernetes.io/hostname"]) | select(.status.loadBalancer.ingress != null) | .metadata.annotations["external-dns.alpha.kubernetes.io/hostname"] + " " + (.status.loadBalancer.ingress[0].ip // "")' | while read HOSTNAME IP; do
+        if [ -n "${IP}" ] && [ "$(echo ${HOSTNAME} | grep ${DOMAIN})" != "" ]; then
+          # Extract just the hostname part (without the domain)
+          SHORTNAME=$(echo ${HOSTNAME} | sed "s/\.${DOMAIN}$//")
+          
+          echo "Found ${HOSTNAME} -> ${IP} (shortname: ${SHORTNAME})"
+          echo "${SHORTNAME} IN A ${IP}" >> "${TEMP_FILE}"
+          SERVICE_COUNT=$((SERVICE_COUNT+1))
+        fi
+      done
+      
+      # Also get ingress resources with hostname annotation
+      kubectl get ingress --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations["external-dns.alpha.kubernetes.io/hostname"]) | select(.status.loadBalancer.ingress != null) | .metadata.annotations["external-dns.alpha.kubernetes.io/hostname"] + " " + (.status.loadBalancer.ingress[0].ip // "")' | while read HOSTNAME IP; do
+        if [ -n "${IP}" ] && [ "$(echo ${HOSTNAME} | grep ${DOMAIN})" != "" ]; then
+          # Extract just the hostname part (without the domain)
+          SHORTNAME=$(echo ${HOSTNAME} | sed "s/\.${DOMAIN}$//")
+          
+          echo "Found ingress ${HOSTNAME} -> ${IP} (shortname: ${SHORTNAME})"
+          echo "${SHORTNAME} IN A ${IP}" >> "${TEMP_FILE}"
+          SERVICE_COUNT=$((SERVICE_COUNT+1))
+        fi
+      done
+      
+      echo "Found ${SERVICE_COUNT} services/ingresses with ${DOMAIN} hostnames"
+      
+      # Replace zone file if changed
+      if ! diff -q "${ZONE_FILE}" "${TEMP_FILE}" > /dev/null 2>&1; then
+        cp "${TEMP_FILE}" "${ZONE_FILE}"
+        echo "Zone file updated at $(date)"
+        echo "New zone file contents:"
+        cat "${ZONE_FILE}"
+      else
+        echo "No changes to zone file needed"
+      fi
+      
+      # Sleep for the specified interval
+      echo "Sleeping for ${INTERVAL} seconds..."
+      sleep ${INTERVAL}
+    done

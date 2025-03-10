@@ -1,0 +1,15 @@
+# Kubernetes secrets
+*secret*.yaml
+*Secret*.yaml
+# Temporary files
+*.tmp
+*.bak
+*.swp
+# Editor files
+.vscode/
+.idea/
+# Logs
+*.log
+# OS specific
+.DS_Store
+Thumbs.db

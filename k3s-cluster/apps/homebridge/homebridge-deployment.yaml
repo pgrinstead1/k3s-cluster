@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "2"
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.26"],"port":80,"protocol":"TCP","serviceName":"homebridge:homebridge","allNodes":false},{"addresses":["192.168.1.26"],"port":51827,"protocol":"TCP","serviceName":"homebridge:homebridge","allNodes":false},{"addresses":["192.168.1.26"],"port":5353,"protocol":"UDP","serviceName":"homebridge:homebridge","allNodes":false},{"nodeName":":master-node","addresses":["fd53:6a0e:e690:f549:e251:d8ff:fe16:9da5"],"port":8581,"protocol":"TCP","podName":"homebridge:homebridge-7b8f78d87-vwjjr","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"homebridge"},"name":"homebridge","namespace":"homebridge"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"homebridge"}},"template":{"metadata":{"labels":{"app":"homebridge"}},"spec":{"containers":[{"env":[{"name":"TZ","value":"America/Los_Angeles"},{"name":"HOMEBRIDGE_CONFIG_UI","value":"1"},{"name":"HOMEBRIDGE_CONFIG_UI_PORT","value":"8581"}],"image":"homebridge/homebridge:latest","imagePullPolicy":"Always","name":"homebridge","ports":[{"containerPort":8581,"name":"web","protocol":"TCP"}],"volumeMounts":[{"mountPath":"/homebridge","name":"homebridge-data"}]}],"volumes":[{"name":"homebridge-data","persistentVolumeClaim":{"claimName":"homebridge-data"}}]}}}}
+  creationTimestamp: "2025-03-08T06:04:43Z"
+  generation: 16
+  labels:
+    app: homebridge
+  name: homebridge
+  namespace: homebridge
+  resourceVersion: "102214"
+  uid: c82e30b1-1a04-4478-b60a-27cde52b4eab
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: homebridge
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: homebridge
+    spec:
+      hostNetwork: true
+      containers:
+      - env:
+        - name: TZ
+          value: America/Los_Angeles
+        - name: HOMEBRIDGE_CONFIG_UI
+          value: "1"
+        - name: HOMEBRIDGE_CONFIG_UI_PORT
+          value: "8581"
+        image: homebridge/homebridge:latest
+        imagePullPolicy: Always
+        name: homebridge
+        ports:
+        - containerPort: 8581
+          name: web
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /homebridge
+          name: homebridge-data
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: homebridge-data
+        persistentVolumeClaim:
+          claimName: homebridge-data
+status:
+  availableReplicas: 1
+  conditions:
+  - lastTransitionTime: "2025-03-08T06:04:43Z"
+    lastUpdateTime: "2025-03-08T06:40:22Z"
+    message: ReplicaSet "homebridge-7b8f78d87" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    status: "True"
+    type: Progressing
+  - lastTransitionTime: "2025-03-08T06:40:40Z"
+    lastUpdateTime: "2025-03-08T06:40:40Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    status: "True"
+    type: Available
+  observedGeneration: 16
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1
