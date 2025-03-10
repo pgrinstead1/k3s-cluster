@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: external-dns
+        args:
+        - --source=service
+        - --source=ingress
+        - --provider=coredns
+        - --coredns-prefix=external
+        - --domain-filter=k8s.local
+        - --annotation-filter=external-dns.alpha.kubernetes.io/enabled=true
+        - --registry=txt
+        - --txt-owner-id=k3s-cluster
+        - --coredns-zone=/etc/coredns/shared/k8s.local.db
+        - --request-timeout=2m
+        volumeMounts:
+        - mountPath: /etc/coredns/shared
+          name: coredns-zone

@@ -1,0 +1,20 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: external-dns
+        args:
+        - --source=service
+        - --provider=rfc2136
+        - --txt-owner-id=k3s-cluster
+        - --domain-filter=k8s.local
+        - --label-filter=external-dns=managed
+        - --log-level=debug
+        - --policy=sync
+        - --registry=txt
+        - --txt-prefix=external-
+        - --interval=3m
+        - --rfc2136-host=pihole-dns-tcp.pihole.svc.cluster.local
+        - --rfc2136-port=53
+        - --rfc2136-zone=k8s.local
+        - --rfc2136-insecure

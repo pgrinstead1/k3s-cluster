@@ -1,0 +1,25 @@
+spec:
+  template:
+    spec:
+      containers:
+      - name: external-dns
+        args:
+        - --source=service
+        - --source=ingress
+        - --namespace=default
+        - --provider=rfc2136
+        - --rfc2136-host=kube-dns.kube-system.svc.cluster.local
+        - --rfc2136-port=53
+        - --rfc2136-zone=k8s.local
+        - --rfc2136-insecure
+        - --txt-prefix=external-
+        - --domain-filter=k8s.local
+        - --annotation-filter=external-dns.alpha.kubernetes.io/enabled=true
+        - --registry=txt
+        - --txt-owner-id=k3s-cluster
+        - --log-level=debug
+        - --interval=3m
+        - --policy=sync
+        - --ignore-hostname-annotation
+        - --fqdn-template={{.Name}}.k8s.local
+        - --request-timeout=10s
