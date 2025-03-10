@@ -1,0 +1,70 @@
+{
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+        "annotations": {
+            "field.cattle.io/publicEndpoints": "[{\"addresses\":[\"192.168.1.25\"],\"port\":80,\"protocol\":\"TCP\",\"serviceName\":\"homebridge:homebridge\",\"allNodes\":false},{\"addresses\":[\"192.168.1.25\"],\"port\":51827,\"protocol\":\"TCP\",\"serviceName\":\"homebridge:homebridge\",\"allNodes\":false},{\"addresses\":[\"192.168.1.25\"],\"port\":5353,\"protocol\":\"UDP\",\"serviceName\":\"homebridge:homebridge\",\"allNodes\":false}]",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"name\":\"homebridge\",\"namespace\":\"homebridge\"},\"spec\":{\"ports\":[{\"name\":\"web\",\"port\":80,\"protocol\":\"TCP\",\"targetPort\":8581},{\"name\":\"homekit\",\"port\":51827,\"protocol\":\"TCP\",\"targetPort\":51827}],\"selector\":{\"app\":\"homebridge\"},\"type\":\"LoadBalancer\"}}\n",
+            "metallb.io/ip-allocated-from-pool": "default-pool"
+        },
+        "creationTimestamp": "2025-03-08T06:04:54Z",
+        "finalizers": [
+            "service.kubernetes.io/load-balancer-cleanup"
+        ],
+        "name": "homebridge",
+        "namespace": "homebridge",
+        "resourceVersion": "224353",
+        "uid": "5a23f1e9-8a12-45e7-8244-00d5661e8f89"
+    },
+    "spec": {
+        "allocateLoadBalancerNodePorts": true,
+        "clusterIP": "10.43.9.48",
+        "clusterIPs": [
+            "10.43.9.48"
+        ],
+        "externalTrafficPolicy": "Cluster",
+        "internalTrafficPolicy": "Cluster",
+        "ipFamilies": [
+            "IPv4"
+        ],
+        "ipFamilyPolicy": "SingleStack",
+        "ports": [
+            {
+                "name": "web",
+                "nodePort": 31130,
+                "port": 80,
+                "protocol": "TCP",
+                "targetPort": 8581
+            },
+            {
+                "name": "homekit",
+                "nodePort": 31561,
+                "port": 51827,
+                "protocol": "TCP",
+                "targetPort": 51827
+            },
+            {
+                "name": "mdns",
+                "nodePort": 32125,
+                "port": 5353,
+                "protocol": "UDP",
+                "targetPort": 5353
+            }
+        ],
+        "selector": {
+            "app": "homebridge"
+        },
+        "sessionAffinity": "None",
+        "type": "LoadBalancer"
+    },
+    "status": {
+        "loadBalancer": {
+            "ingress": [
+                {
+                    "ip": "192.168.1.25",
+                    "ipMode": "VIP"
+                }
+            ]
+        }
+    }
+}
