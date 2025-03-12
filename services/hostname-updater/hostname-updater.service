@@ -1,0 +1,17 @@
+[Unit]
+Description=Hostname Updater for OPNsense
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment="OPNSENSE_URL=https://192.168.1.1"
+Environment="OPNSENSE_API_KEY=your_api_key"
+Environment="OPNSENSE_API_SECRET=your_api_secret"
+Environment="CHECK_INTERVAL=300"
+ExecStart=/home/pi/hostname-updater-env/bin/python3 /usr/local/bin/hostname-updater.py
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
