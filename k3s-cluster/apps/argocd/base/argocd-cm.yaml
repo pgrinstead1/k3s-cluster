@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+data:
+  # ArgoCD URL configuration
+  url: https://argocd.k3s.home
+  
+  # General ArgoCD settings
+  timeout.reconciliation: 180s
+  application.resourceTrackingMethod: annotation
+  
+  # Enable admin access
+  admin.enabled: "true"
+  
+  # Define the default project destination
+  resource.exclusions: |
+    - apiGroups:
+      - cilium.io
+      kinds:
+      - CiliumIdentity
+      clusters:
+      - "*"
+  
+  # TLS configuration
+  tls.selfsigned: "true"
+  
+  # Repository configuration
+  repositories: |
+    - type: git
+      url: https://github.com/pgrinstead1/k3s-cluster
+      name: k3s-cluster
+      insecure: true
+      
+  # Optional: Configure Kustomize settings
+  kustomize.buildOptions: --enable-helm
+  
+  # Optional: Configure status badge enabled
+  statusbadge.enabled: "true"
