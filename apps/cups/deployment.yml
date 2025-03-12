@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cups
+  namespace: printing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cups
+  template:
+    metadata:
+      labels:
+        app: cups
+    spec:
+      volumes:
+        - name: cups-storage
+          persistentVolumeClaim:
+            claimName: cups-storage
+      containers:
+        - name: cups
+          image: openprinting/cupsd
+          ports:
+            - containerPort: 631
+          volumeMounts:
+            - mountPath: /etc/cups
+              name: cups-storage
