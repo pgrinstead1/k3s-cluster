@@ -1,0 +1,41 @@
+name: Kubernetes Deployment
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install kubeval
+      run: |
+        wget https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+        tar xf kubeval-linux-amd64.tar.gz
+        sudo cp kubeval /usr/local/bin
+    
+    - name: Validate Kubernetes manifests
+      run: |
+        find ./k3s-cluster -name "*.yaml" -o -name "*.yml" | xargs kubeval --ignore-missing-schemas
+
+  deploy:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure kubectl
+      uses: azure/k8s-set-context@v1
+      with:
+        method: kubeconfig
+        kubeconfig: ${{ secrets.KUBE_CONFIG }}
+    
+    - name: Deploy to k3s cluster
+      run: |
+        # Apply configurations using either kustomize or kubectl directly
+        find ./k3s-cluster -name "*.yaml" -o -name "*.yml" | sort | xargs -I{} kubectl apply -f {}
