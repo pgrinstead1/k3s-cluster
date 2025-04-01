@@ -1,0 +1,116 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.29"],"port":80,"protocol":"TCP","serviceName":"monitoring:influxdb-influxdb2","allNodes":false},{"addresses":["192.168.1.29"],"port":8086,"protocol":"TCP","serviceName":"monitoring:influxdb-influxdb2","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+    meta.helm.sh/release-name: influxdb
+    meta.helm.sh/release-namespace: monitoring
+  labels:
+    app.kubernetes.io/instance: influxdb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: influxdb2
+    app.kubernetes.io/version: 2.7.4
+    helm.sh/chart: influxdb2-2.1.2
+  name: influxdb-influxdb2
+  namespace: monitoring
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: influxdb
+      app.kubernetes.io/name: influxdb2
+  serviceName: influxdb-influxdb2
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/restartedAt: "2025-03-30T00:51:20Z"
+      labels:
+        app.kubernetes.io/instance: influxdb
+        app.kubernetes.io/name: influxdb2
+    spec:
+      containers:
+      - env:
+        - name: DOCKER_INFLUXDB_INIT_MODE
+          value: setup
+        - name: DOCKER_INFLUXDB_INIT_USERNAME
+          value: admin
+        - name: DOCKER_INFLUXDB_INIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: influxdb-influxdb2-auth
+        - name: DOCKER_INFLUXDB_INIT_ORG
+          value: default
+        - name: DOCKER_INFLUXDB_INIT_BUCKET
+          value: default
+        - name: DOCKER_INFLUXDB_INIT_RETENTION
+          value: 0s
+        - name: DOCKER_INFLUXDB_INIT_ADMIN_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: admin-token
+              name: influxdb-influxdb2-auth
+        - name: INFLUXD_BOLT_PATH
+          value: /var/lib/influxdb2/influxd.bolt
+        - name: INFLUXD_ENGINE_PATH
+          value: /var/lib/influxdb2
+        image: influxdb:2.7.4-alpine
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: influxdb2
+        ports:
+        - containerPort: 8086
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/lib/influxdb2
+          name: data
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: influxdb-influxdb2
+      serviceAccountName: influxdb-influxdb2
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: influxdb-influxdb2-longhorn
+  updateStrategy:
+    rollingUpdate:
+      partition: 0
+    type: RollingUpdate
+  availableReplicas: 1
+  collisionCount: 0
+  currentReplicas: 1
+  currentRevision: influxdb-influxdb2-78445cbcbd
+  readyReplicas: 1
+  replicas: 1
+  updateRevision: influxdb-influxdb2-78445cbcbd
+  updatedReplicas: 1

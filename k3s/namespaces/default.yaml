@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    field.cattle.io/projectId: local:p-6qtrp
+    lifecycle.cattle.io/create.namespace-auth: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    field.cattle.io/projectId: p-6qtrp
+    kubernetes.io/metadata.name: default
+  name: default
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

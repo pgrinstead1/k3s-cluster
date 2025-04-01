@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    field.cattle.io/projectId: local:p-8zbt8
+    lifecycle.cattle.io/create.namespace-auth: "true"
+    management.cattle.io/no-default-sa-token: "true"
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/3zOTW6DQAyG4bt4HShTUprMOXoBj2OUqeYH4Y9Fhbh7NWSfnS1Zj9+dsoIfDCa/E5dSwYi1WFtr+FWBKfo11l4YSNrH+hEf5GlOquhCrTCsvHSncVxIVj2Fn5jVwHkhX7aULpQ4aHrrPtme5On65YZxGGd3D5MEnuU+jM5db8Hdpml2k3wG/WY+vxXOSp5eRvdqkrQZdLXO/gya25ktKuT3NoGxtYrj+A8AAP//GNBA4fwAAAA
+    objectset.rio.cattle.io/id: fleet-bootstrap-data
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    field.cattle.io/projectId: p-8zbt8
+    kubernetes.io/metadata.name: cattle-fleet-clusters-system
+    objectset.rio.cattle.io/hash: 4510303f19b6cbafc9031148b1866f16c2be7aaa
+  name: cattle-fleet-clusters-system
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

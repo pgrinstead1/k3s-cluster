@@ -1,0 +1,43 @@
+apiVersion: v1
+data:
+  telegraf.conf: |
+    [agent]
+      interval = "10s"
+      round_interval = true
+      metric_batch_size = 1000
+      metric_buffer_limit = 10000
+      collection_jitter = "0s"
+      flush_interval = "10s"
+      flush_jitter = "0s"
+      debug = true
+
+    [[outputs.influxdb_v2]]
+      urls = ["http://192.168.1.29:80"]
+      token = "KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX"
+      organization = "influxdata"
+      bucket = "crowdsec"
+
+    [[inputs.tail]]
+      files = ["/var/log/pods/crowdsec*/*/lapi/*.log"]
+      from_beginning = true
+      pipe = false
+      watch_method = "inotify"
+      data_format = "grok"
+      grok_patterns = [
+        '%{TIMESTAMP_ISO8601:timestamp_raw} stderr F time="%{TIMESTAMP_ISO8601:timestamp}" level=%{WORD:level} msg="%{IP:client_ip} - \[%{TIMESTAMP_ISO8601:request_time}\] \"%{WORD:http_method} %{NOTSPACE:path} %{WORD:protocol}/%{NUMBER:protocol_version:float} %{NUMBER:status_code:int} %{NUMBER:response_time:float}[µu]?s.+\"',
+        '%{TIMESTAMP_ISO8601:timestamp_raw} stderr F time="%{TIMESTAMP_ISO8601:timestamp}" level=%{WORD:level} msg="%{GREEDYDATA:message}"'
+      ]
+      grok_timezone = "UTC"
+      name_override = "crowdsec_logs"
+
+      [inputs.tail.tags]
+        app = "crowdsec"
+        component = "lapi"
+        namespace = "crowdsec"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"telegraf.conf":"[agent]\n  interval = \"10s\"\n  round_interval = true\n  metric_batch_size = 1000\n  metric_buffer_limit = 10000\n  collection_jitter = \"0s\"\n  flush_interval = \"10s\"\n  flush_jitter = \"0s\"\n  debug = true\n\n[[outputs.influxdb_v2]]\n  urls = [\"http://192.168.1.29:80\"]\n  token = \"KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX\"\n  organization = \"influxdata\"\n  bucket = \"crowdsec\"\n\n[[inputs.tail]]\n  files = [\"/var/log/pods/crowdsec*/*/lapi/*.log\"]\n  from_beginning = true\n  pipe = false\n  watch_method = \"inotify\"\n  data_format = \"grok\"\n  grok_patterns = [\n    '%{TIMESTAMP_ISO8601:timestamp_raw} stderr F time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{WORD:level} msg=\"%{IP:client_ip} - \\[%{TIMESTAMP_ISO8601:request_time}\\] \\\"%{WORD:http_method} %{NOTSPACE:path} %{WORD:protocol}/%{NUMBER:protocol_version:float} %{NUMBER:status_code:int} %{NUMBER:response_time:float}[µu]?s.+\\\"',\n    '%{TIMESTAMP_ISO8601:timestamp_raw} stderr F time=\"%{TIMESTAMP_ISO8601:timestamp}\" level=%{WORD:level} msg=\"%{GREEDYDATA:message}\"'\n  ]\n  grok_timezone = \"UTC\"\n  name_override = \"crowdsec_logs\"\n\n  [inputs.tail.tags]\n    app = \"crowdsec\"\n    component = \"lapi\"\n    namespace = \"crowdsec\"\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"telegraf-crowdsec-config","namespace":"monitoring"}}
+  name: telegraf-crowdsec-config
+  namespace: monitoring

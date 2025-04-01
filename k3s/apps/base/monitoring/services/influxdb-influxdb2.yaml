@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: influxdb.k8s.internal
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.29"],"port":80,"protocol":"TCP","serviceName":"monitoring:influxdb-influxdb2","allNodes":false},{"addresses":["192.168.1.29"],"port":8086,"protocol":"TCP","serviceName":"monitoring:influxdb-influxdb2","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"name":"influxdb-influxdb2","namespace":"monitoring"},"spec":{"ports":[{"name":"http","port":80,"protocol":"TCP","targetPort":8086},{"name":"api","port":8086,"protocol":"TCP","targetPort":8086}],"selector":{"app.kubernetes.io/instance":"influxdb","app.kubernetes.io/name":"influxdb2"},"type":"LoadBalancer"}}
+    meta.helm.sh/release-name: influxdb
+    meta.helm.sh/release-namespace: monitoring
+    metallb.io/ip-allocated-from-pool: default-pool
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app.kubernetes.io/instance: influxdb
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: influxdb2
+    app.kubernetes.io/version: 2.7.4
+    helm.sh/chart: influxdb2-2.1.2
+  name: influxdb-influxdb2
+  namespace: monitoring
+spec:
+  allocateLoadBalancerNodePorts: true
+  - 10.43.120.120
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 192.168.1.29
+  ports:
+  - name: http
+    nodePort: 32725
+    port: 80
+    protocol: TCP
+    targetPort: 8086
+  - name: api
+    nodePort: 32636
+    port: 8086
+    protocol: TCP
+    targetPort: 8086
+  selector:
+    app.kubernetes.io/instance: influxdb
+    app.kubernetes.io/name: influxdb2
+  sessionAffinity: None
+  type: LoadBalancer
+  loadBalancer:
+    ingress:
+    - ip: 192.168.1.29
+      ipMode: VIP

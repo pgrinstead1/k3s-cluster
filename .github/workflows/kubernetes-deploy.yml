@@ -1,0 +1,60 @@
+name: Kubernetes Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'k3s-cluster/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'k3s-cluster/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v1
+        
+      - name: Validate Kubernetes manifests
+        run: |
+          find k3s-cluster -name "*.yaml" -print0 | xargs -0 -I{} kubectl --dry-run=client -f {} validate
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v1
+        
+      - name: Set up kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig.yaml
+          chmod 600 kubeconfig.yaml
+          export KUBECONFIG="kubeconfig.yaml"
+        
+      - name: Deploy to Kubernetes
+        run: |
+          # CoreDNS
+          kubectl apply -f k3s-cluster/apps/coredns/
+          
+          # CUPS
+          kubectl apply -f k3s-cluster/apps/cups/
+          
+          # Homebridge
+          kubectl apply -f k3s-cluster/apps/homebridge/
+          
+          # Pi-hole
+          kubectl apply -f k3s-cluster/apps/pihole/
+          
+          # External DNS
+          kubectl apply -f k3s-cluster/dns/external-dns/
+          
+          # Rancher
+          kubectl apply -f k3s-cluster/apps/rancher/

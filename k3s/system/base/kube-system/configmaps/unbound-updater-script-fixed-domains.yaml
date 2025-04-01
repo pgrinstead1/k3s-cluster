@@ -1,0 +1,91 @@
+apiVersion: v1
+data:
+  fixed_script.sh: "#!/bin/bash\nset -e\n\necho \"Starting DNS update script...\"\n\n#
+    First, make sure we have the required tools\napt-get update\napt-get install -y
+    curl jq gnupg ca-certificates\n\n# Environment variables from secrets\n# OPNSENSE_IP,
+    API_KEY, and API_SECRET should be passed as env vars\n\nDOMAIN=\"floof.com\"\nINTERNAL_DOMAIN=\"k8s.internal\"\nUNBOUND_BASE_URL=\"https://${OPNSENSE_IP}/api/unbound/service/host_override\"\nUNBOUND_ADD_URL=\"${UNBOUND_BASE_URL}.json\"\nUNBOUND_DEL_URL=\"${UNBOUND_BASE_URL}/delHost\"\nUNBOUND_SEARCH_URL=\"${UNBOUND_BASE_URL}.json\"\nUNBOUND_RECONFIGURE_URL=\"https://${OPNSENSE_IP}/api/unbound/service/reconfigure\"\n\necho
+    \"Environment variables set.\"\n\n# Function to search host overrides\nsearch_host_override()
+    {\n    curl -k -s \"${UNBOUND_SEARCH_URL}\" -u \"${API_KEY}:${API_SECRET}\" -d
+    \"current=1&rowCount=100&searchPhrase=\"\n}\n\n# Function to add a host override\nadd_host_override()
+    {\n    local HOST=$1\n    local DOMAIN=$2\n    local IP=$3\n    local DESCRIPTION=$4\n\n
+    \   echo \"✅ Registering: ${HOST}.${DOMAIN} → ${IP}\"\n    \n    curl -k -s \"${UNBOUND_ADD_URL}\"
+    -u \"${API_KEY}:${API_SECRET}\" -d \"host=${HOST}&domain=${DOMAIN}&server=${IP}&rr=A&mxprio=&mx=&value=&description=${DESCRIPTION}\"\n}\n\n#
+    Function to delete a host override\ndelete_host_override() {\n    local UUID=$1\n
+    \   \n    echo \"\U0001F5D1️ Removing stale entry with UUID: ${UUID}\"\n    \n
+    \   curl -k -s \"${UNBOUND_DEL_URL}\" -u \"${API_KEY}:${API_SECRET}\"\n}\n\n#
+    Function to reconfigure Unbound\nreconfigure_unbound() {\n    echo \"Reconfiguring
+    Unbound...\"\n    \n    curl -k -s \"${UNBOUND_RECONFIGURE_URL}\" -u \"${API_KEY}:${API_SECRET}\"
+    -X POST\n}\n\n# Install kubectl directly\necho \"Installing kubectl...\"\ncurl
+    -LO \"https://dl.k8s.io/release/v1.32.3/bin/linux/amd64/kubectl\"\nchmod +x kubectl\nmv
+    kubectl /usr/local/bin/\n\necho \"Getting current host overrides...\"\n# Get current
+    host overrides\nunbound_hosts=$(search_host_override)\necho \"${unbound_hosts}\"
+    > /tmp/unbound_hosts.json\n\necho \"Retrieving LoadBalancer services...\"\n\n#
+    Create arrays to track service information\ndeclare -A service_ips\ndeclare -A
+    service_names\ndeclare -a all_services\n\n# Get all LoadBalancer services with
+    their IPs using kubectl and jq\nkubectl get services --all-namespaces --field-selector
+    spec.type=LoadBalancer -o json | \\\n    jq -r '.items[] | select(.status.loadBalancer.ingress
+    != null) | \"\\(.metadata.name)|\\(.metadata.namespace)|\\(.status.loadBalancer.ingress[0].ip)\"'
+    | \\\n    while IFS=\"|\" read -r name namespace ip; do\n    if [[ -n \"${name}\"
+    && -n \"${ip}\" ]]; then\n        service_ips[\"${name}\"]=\"${ip}\"\n        service_names[\"${name}\"]=\"${namespace}\"\n
+    \       all_services+=(\"${name}\")\n        \n        # For debugging purposes\n
+    \       echo -e \"\\t\\t${name}.${DOMAIN} -> ${ip}\"\n    fi\ndone\n\n# Check
+    service_name in \"${all_services[@]}\"; do\n    echo \"✅ Registering: ${service_name}.${DOMAIN}
+    → ${service_ips[${service_name}]}\"\n    add_host_override \"${service_name}\"
+    \"${DOMAIN}\" \"${service_ips[${service_name}]}\" \"K8s Service: ${service_names[${service_name}]}/${service_name}\"\n
+    \   \n    # For some services, also create internal domain entries\n    if [[
+    \"${service_name}\" == \"longhorn-frontend\" ]]; then\n        add_host_override
+    \"longhorn\" \"${DOMAIN}\" \"${service_ips[${service_name}]}\" \"K8s Service:
+    ${service_names[${service_name}]}/${service_name}\"\n    fi\n    \n    # Special
+    cases for specific services\n    case \"${service_name}\" in\n        \"adguard2\")\n
+    \           add_host_override \"adguard\" \"${DOMAIN}\" \"${service_ips[${service_name}]}\"
+    \"K8s Service: ${service_names[${service_name}]}/${service_name}\"\n            ;;\n
+    \   esac\ndone\n\n# Apply changes\nreconfigure_unbound\n\necho \"DNS updates completed
+    successfully.\"\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: "{\"apiVersion\":\"v1\",\"data\":{\"fixed_script.sh\":\"#!/bin/bash\\nset
+      -e\\n\\necho \\\"Starting DNS update script...\\\"\\n\\n# First, make sure we
+      have the required tools\\napt-get update\\napt-get install -y curl jq gnupg
+      ca-certificates\\n\\n# Environment variables from secrets\\n# OPNSENSE_IP, API_KEY,
+      and API_SECRET should be passed as env vars\\n\\nDOMAIN=\\\"floof.com\\\"\\nINTERNAL_DOMAIN=\\\"k8s.internal\\\"\\nUNBOUND_BASE_URL=\\\"https://${OPNSENSE_IP}/api/unbound/service/host_override\\\"\\nUNBOUND_ADD_URL=\\\"${UNBOUND_BASE_URL}.json\\\"\\nUNBOUND_DEL_URL=\\\"${UNBOUND_BASE_URL}/delHost\\\"\\nUNBOUND_SEARCH_URL=\\\"${UNBOUND_BASE_URL}.json\\\"\\nUNBOUND_RECONFIGURE_URL=\\\"https://${OPNSENSE_IP}/api/unbound/service/reconfigure\\\"\\n\\necho
+      \\\"Environment variables set.\\\"\\n\\n# Function to search host overrides\\nsearch_host_override()
+      {\\n    curl -k -s \\\"${UNBOUND_SEARCH_URL}\\\" -u \\\"${API_KEY}:${API_SECRET}\\\"
+      -d \\\"current=1\\u0026rowCount=100\\u0026searchPhrase=\\\"\\n}\\n\\n# Function
+      to add a host override\\nadd_host_override() {\\n    local HOST=$1\\n    local
+      DOMAIN=$2\\n    local IP=$3\\n    local DESCRIPTION=$4\\n\\n    echo \\\"✅ Registering:
+      ${HOST}.${DOMAIN} → ${IP}\\\"\\n    \\n    curl -k -s \\\"${UNBOUND_ADD_URL}\\\"
+      -u \\\"${API_KEY}:${API_SECRET}\\\" -d \\\"host=${HOST}\\u0026domain=${DOMAIN}\\u0026server=${IP}\\u0026rr=A\\u0026mxprio=\\u0026mx=\\u0026value=\\u0026description=${DESCRIPTION}\\\"\\n}\\n\\n#
+      Function to delete a host override\\ndelete_host_override() {\\n    local UUID=$1\\n
+      \   \\n    echo \\\"\U0001F5D1️ Removing stale entry with UUID: ${UUID}\\\"\\n
+      \   \\n    curl -k -s \\\"${UNBOUND_DEL_URL}\\\" -u \\\"${API_KEY}:${API_SECRET}\\\"\\n}\\n\\n#
+      Function to reconfigure Unbound\\nreconfigure_unbound() {\\n    echo \\\"Reconfiguring
+      Unbound...\\\"\\n    \\n    curl -k -s \\\"${UNBOUND_RECONFIGURE_URL}\\\" -u
+      \\\"${API_KEY}:${API_SECRET}\\\" -X POST\\n}\\n\\n# Install kubectl directly\\necho
+      \\\"Installing kubectl...\\\"\\ncurl -LO \\\"https://dl.k8s.io/release/v1.32.3/bin/linux/amd64/kubectl\\\"\\nchmod
+      +x kubectl\\nmv kubectl /usr/local/bin/\\n\\necho \\\"Getting current host overrides...\\\"\\n#
+      Get current host overrides\\nunbound_hosts=$(search_host_override)\\necho \\\"${unbound_hosts}\\\"
+      \\u003e /tmp/unbound_hosts.json\\n\\necho \\\"Retrieving LoadBalancer services...\\\"\\n\\n#
+      Create arrays to track service information\\ndeclare -A service_ips\\ndeclare
+      -A service_names\\ndeclare -a all_services\\n\\n# Get all LoadBalancer services
+      with their IPs using kubectl and jq\\nkubectl get services --all-namespaces
+      --field-selector spec.type=LoadBalancer -o json | \\\\\\n    jq -r '.items[]
+      | select(.status.loadBalancer.ingress != null) | \\\"\\\\(.metadata.name)|\\\\(.metadata.namespace)|\\\\(.status.loadBalancer.ingress[0].ip)\\\"'
+      | \\\\\\n    while IFS=\\\"|\\\" read -r name namespace ip; do\\n    if [[ -n
+      \\\"${name}\\\" \\u0026\\u0026 -n \\\"${ip}\\\" ]]; then\\n        service_ips[\\\"${name}\\\"]=\\\"${ip}\\\"\\n
+      \       service_names[\\\"${name}\\\"]=\\\"${namespace}\\\"\\n        all_services+=(\\\"${name}\\\")\\n
+      \       \\n        # For debugging purposes\\n        echo -e \\\"\\\\t\\\\t${name}.${DOMAIN}
+      -\\u003e ${ip}\\\"\\n    fi\\ndone\\n\\n# Check for stale unbound entries\\necho
+      service_name in \\\"${all_services[@]}\\\"; do\\n    echo \\\"✅ Registering:
+      ${service_name}.${DOMAIN} → ${service_ips[${service_name}]}\\\"\\n    add_host_override
+      \\\"${service_name}\\\" \\\"${DOMAIN}\\\" \\\"${service_ips[${service_name}]}\\\"
+      \\\"K8s Service: ${service_names[${service_name}]}/${service_name}\\\"\\n    \\n
+      \   # For some services, also create internal domain entries\\n    if [[ \\\"${service_name}\\\"
+      == \\\"longhorn-frontend\\\" ]]; then\\n        add_host_override \\\"longhorn\\\"
+      \\\"${DOMAIN}\\\" \\\"${service_ips[${service_name}]}\\\" \\\"K8s Service: ${service_names[${service_name}]}/${service_name}\\\"\\n
+      \   fi\\n    \\n    # Special cases for specific services\\n    case \\\"${service_name}\\\"
+      in\\n        \\\"adguard2\\\")\\n            add_host_override \\\"adguard\\\"
+      \\\"${DOMAIN}\\\" \\\"${service_ips[${service_name}]}\\\" \\\"K8s Service: ${service_names[${service_name}]}/${service_name}\\\"\\n
+      \           ;;\\n    esac\\ndone\\n\\n# Apply changes\\nreconfigure_unbound\\n\\necho
+  name: unbound-updater-script-fixed-domains
+  namespace: kube-system

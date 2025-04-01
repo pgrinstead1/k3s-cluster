@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    lifecycle.cattle.io/create.namespace-auth: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    kubernetes.io/metadata.name: local
+  name: local
+  ownerReferences:
+  - apiVersion: management.cattle.io/v3
+    kind: Cluster
+    name: local
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

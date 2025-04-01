@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "30"
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.25"],"port":80,"protocol":"TCP","serviceName":"adguard:adguard-service","allNodes":false},{"addresses":["192.168.1.25"],"port":53,"protocol":"UDP","serviceName":"adguard:adguard-service","allNodes":false},{"addresses":["192.168.1.25"],"port":3000,"protocol":"TCP","serviceName":"adguard:adguard-service","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+  name: adguard-deployment
+  namespace: adguard
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: adguard
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        cattle.io/timestamp: "2025-03-22T15:46:43Z"
+        kubectl.kubernetes.io/restartedAt: "2025-03-27T10:07:55-07:00"
+      labels:
+        app: adguard
+      namespace: adguard
+    spec:
+      containers:
+      - image: adguard/adguardhome:latest
+        imagePullPolicy: Always
+        name: adguard
+        resources:
+          limits:
+            cpu: 500m
+            memory: 500Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/adguardhome/conf
+          name: config-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config-volume
+        persistentVolumeClaim:
+          claimName: adguard-config-longhorn-pvc
+  availableReplicas: 1
+  conditions:
+    lastUpdateTime: "2025-03-30T02:58:05Z"
+    message: ReplicaSet "adguard-deployment-9c6fb47f9" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    type: Progressing
+    lastUpdateTime: "2025-03-30T19:54:09Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    type: Available
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    field.cattle.io/projectId: local:p-8zbt8
+    fleet.cattle.io/cluster: local
+    fleet.cattle.io/cluster-namespace: fleet-local
+    lifecycle.cattle.io/create.namespace-auth: "true"
+    management.cattle.io/no-default-sa-token: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    field.cattle.io/projectId: p-8zbt8
+    fleet.cattle.io/managed: "true"
+    kubernetes.io/metadata.name: cluster-fleet-local-local-1a3d67d0a899
+  name: cluster-fleet-local-local-1a3d67d0a899
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

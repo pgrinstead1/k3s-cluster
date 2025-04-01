@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: kubernetes-dashboard
+    name: kubernetes-dashboard
+  name: kubernetes-dashboard
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

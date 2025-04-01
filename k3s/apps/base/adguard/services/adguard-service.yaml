@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: adguard.k8s.internal
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.25"],"port":80,"protocol":"TCP","serviceName":"adguard:adguard-service","allNodes":false},{"addresses":["192.168.1.25"],"port":53,"protocol":"UDP","serviceName":"adguard:adguard-service","allNodes":false},{"addresses":["192.168.1.25"],"port":3000,"protocol":"TCP","serviceName":"adguard:adguard-service","allNodes":false}]'
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{"metallb.universe.tf/address-pool":"default-pool","metallb.universe.tf/allow-shared-ip":"adguard-home"},"name":"adguard-service","namespace":"adguard"},"spec":{"loadBalancerIP":"192.168.1.25","ports":[{"name":"http","port":80,"targetPort":80},{"name":"dns","port":53,"protocol":"UDP","targetPort":53},{"name":"webui","port":3000,"protocol":"TCP","targetPort":3000}],"selector":{"app":"adguard"},"type":"LoadBalancer"}}
+    metallb.io/ip-allocated-from-pool: default-pool
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  name: adguard-service
+  namespace: adguard
+spec:
+  allocateLoadBalancerNodePorts: true
+  - 10.43.156.178
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 192.168.1.25
+  ports:
+  - name: http
+    nodePort: 31591
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: dns
+    nodePort: 32063
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: webui
+    nodePort: 30777
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: adguard
+  sessionAffinity: None
+  type: LoadBalancer
+  loadBalancer:
+    ingress:
+    - ip: 192.168.1.25
+      ipMode: VIP

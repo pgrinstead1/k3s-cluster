@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+    meta.helm.sh/release-name: kubernetes-dashboard
+    meta.helm.sh/release-namespace: kubernetes-dashboard
+  labels:
+    app.kubernetes.io/component: api
+    app.kubernetes.io/instance: kubernetes-dashboard
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: kubernetes-dashboard-api
+    app.kubernetes.io/part-of: kubernetes-dashboard
+    app.kubernetes.io/version: 1.11.1
+    helm.sh/chart: kubernetes-dashboard-7.11.1
+  name: kubernetes-dashboard-api
+  namespace: kubernetes-dashboard
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: kubernetes-dashboard
+      app.kubernetes.io/name: kubernetes-dashboard-api
+      app.kubernetes.io/part-of: kubernetes-dashboard
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: f4d053271aecb4c02a038aa1b44158361195ec9db56ae49210cc6e0d9452fdd6
+      labels:
+        app.kubernetes.io/component: api
+        app.kubernetes.io/instance: kubernetes-dashboard
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/name: kubernetes-dashboard-api
+        app.kubernetes.io/part-of: kubernetes-dashboard
+        app.kubernetes.io/version: 1.11.1
+        helm.sh/chart: kubernetes-dashboard-7.11.1
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - args:
+        - --namespace=kubernetes-dashboard
+        - --metrics-scraper-service-name=kubernetes-dashboard-metrics-scraper
+        env:
+        - name: CSRF_KEY
+          valueFrom:
+            secretKeyRef:
+              key: private.key
+              name: kubernetes-dashboard-csrf
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.cpu
+        - name: GOMEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.memory
+        image: docker.io/kubernetesui/dashboard-api:1.11.1
+        imagePullPolicy: IfNotPresent
+        name: kubernetes-dashboard-api
+        ports:
+        - containerPort: 8000
+          name: api
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 400Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsGroup: 2001
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: kubernetes-dashboard-api
+      serviceAccountName: kubernetes-dashboard-api
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - emptyDir: {}
+        name: tmp-volume
+  availableReplicas: 1
+  conditions:
+    lastUpdateTime: "2025-03-30T15:45:44Z"
+    message: ReplicaSet "kubernetes-dashboard-api-7bb889ff56" has successfully progressed.
+    reason: NewReplicaSetAvailable
+    type: Progressing
+    lastUpdateTime: "2025-03-30T19:54:08Z"
+    message: Deployment has minimum availability.
+    reason: MinimumReplicasAvailable
+    type: Available
+  readyReplicas: 1
+  replicas: 1
+  updatedReplicas: 1

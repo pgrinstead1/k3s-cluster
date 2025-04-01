@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    lifecycle.cattle.io/create.namespace-auth: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    kubernetes.io/metadata.name: cattle-provisioning-capi-system
+  name: cattle-provisioning-capi-system
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

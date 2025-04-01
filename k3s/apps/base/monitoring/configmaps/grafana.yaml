@@ -1,0 +1,43 @@
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - access: proxy
+      isDefault: true
+      jsonData:
+        organization: influxdata
+        version: Flux
+      name: InfluxDB
+      secureJsonData:
+        token: KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX
+      type: influxdb
+      url: http://influxdb-influxdb2:8086
+  grafana.ini: |
+    [analytics]
+    check_for_updates = true
+    [grafana_net]
+    url = https://grafana.net
+    [log]
+    mode = console
+    [paths]
+    data = /var/lib/grafana/
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+    [server]
+    domain = ''
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+    meta.helm.sh/release-name: grafana
+    meta.helm.sh/release-namespace: monitoring
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 11.5.2
+    helm.sh/chart: grafana-8.10.4
+  name: grafana
+  namespace: monitoring

@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    field.cattle.io/projectId: local:p-8zbt8
+    lifecycle.cattle.io/create.namespace-auth: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    field.cattle.io/projectId: p-8zbt8
+    kubernetes.io/metadata.name: kube-system
+  name: kube-system
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active
