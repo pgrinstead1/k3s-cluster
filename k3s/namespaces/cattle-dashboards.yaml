@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    helm.sh/resource-policy: keep
+    lifecycle.cattle.io/create.namespace-auth: "true"
+    meta.helm.sh/release-name: rancher-monitoring
+    meta.helm.sh/release-namespace: cattle-monitoring-system
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    app.kubernetes.io/instance: rancher-monitoring
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: rancher-monitoring
+    app.kubernetes.io/version: 105.1.3_up61.3.2
+    chart: rancher-monitoring-105.1.3_up61.3.2
+    heritage: Helm
+    kubernetes.io/metadata.name: cattle-dashboards
+    name: cattle-dashboards
+    release: rancher-monitoring
+  name: cattle-dashboards
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

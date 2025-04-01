@@ -1,0 +1,92 @@
+apiVersion: v1
+data:
+  AdGuardHome.yaml: |
+    bind_host: 0.0.0.0
+    bind_port: 3000
+    beta_bind_port: 0
+    users: []
+    auth_attempts: 5
+    block_auth_min: 15
+    http_proxy: ""
+    language: ""
+    debug_pprof: false
+    web_session_ttl: 720
+    dns:
+      bind_hosts:
+        - 0.0.0.0
+      port: 53
+      statistics_interval: 1
+      querylog_enabled: true
+      querylog_file_enabled: true
+      querylog_interval: 90
+      querylog_size_memory: 1000
+      anonymize_client_ip: false
+      protection_enabled: true
+      blocking_mode: default
+      blocking_ipv4: ""
+      blocking_ipv6: ""
+      blocked_response_ttl: 10
+      parental_block_host: family-block.dns.adguard.com
+      safebrowsing_block_host: standard-block.dns.adguard.com
+      ratelimit: 0
+      ratelimit_whitelist: []
+      refuse_any: true
+      upstream_dns:
+        - 192.168.1.1
+        - tls://1.1.1.1
+        - tls://1.0.0.1
+        - https://dns.google/dns-query
+      upstream_dns_file: ""
+      bootstrap_dns:
+        - 192.168.1.1
+        - 1.1.1.1
+        - 8.8.8.8
+      all_servers: true
+      fastest_addr: true
+      fastest_timeout: 500ms
+      allowed_clients: []
+      disallowed_clients: []
+      blocked_hosts:
+        - version.bind
+        - id.server
+        - hostname.bind
+      trusted_proxies:
+        - 127.0.0.0/8
+        - ::1/128
+      cache_size: 16777216
+      cache_ttl_min: 600
+      cache_ttl_max: 3600
+      cache_optimistic: true
+      bogus_nxdomain: []
+      aaaa_disabled: false
+      enable_dnssec: true
+      edns_client_subnet:
+        custom_ip: ""
+        enabled: true
+        use_custom: false
+      max_goroutines: 500
+      handle_ddr: true
+      ipset: []
+      filtering_enabled: true
+      filters_update_interval: 24
+      parental_enabled: false
+      safesearch_enabled: false
+      safebrowsing_enabled: false
+      safebrowsing_cache_size: 1048576
+      safesearch_cache_size: 1048576
+      parental_cache_size: 1048576
+      cache_time: 30
+      rewrites: []
+      blocked_services: []
+      upstream_timeout: 5s
+      local_domain_name: lan
+      resolve_clients: true
+      use_private_ptr_resolvers: true
+      local_ptr_upstreams: []
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"AdGuardHome.yaml":"bind_host: 0.0.0.0\nbind_port: 3000\nbeta_bind_port: 0\nusers: []\nauth_attempts: 5\nblock_auth_min: 15\nhttp_proxy: \"\"\nlanguage: \"\"\ndebug_pprof: false\nweb_session_ttl: 720\ndns:\n  bind_hosts:\n    - 0.0.0.0\n  port: 53\n  statistics_interval: 1\n  querylog_enabled: true\n  querylog_file_enabled: true\n  querylog_interval: 90\n  querylog_size_memory: 1000\n  anonymize_client_ip: false\n  protection_enabled: true\n  blocking_mode: default\n  blocking_ipv4: \"\"\n  blocking_ipv6: \"\"\n  blocked_response_ttl: 10\n  parental_block_host: family-block.dns.adguard.com\n  safebrowsing_block_host: standard-block.dns.adguard.com\n  ratelimit: 0\n  ratelimit_whitelist: []\n  refuse_any: true\n  upstream_dns:\n    - 192.168.1.1\n    - tls://1.1.1.1\n    - tls://1.0.0.1\n    - https://dns.google/dns-query\n  upstream_dns_file: \"\"\n  bootstrap_dns:\n    - 192.168.1.1\n    - 1.1.1.1\n    - 8.8.8.8\n  all_servers: true\n  fastest_addr: true\n  fastest_timeout: 500ms\n  allowed_clients: []\n  disallowed_clients: []\n  blocked_hosts:\n    - version.bind\n    - id.server\n    - hostname.bind\n  trusted_proxies:\n    - 127.0.0.0/8\n    - ::1/128\n  cache_size: 16777216\n  cache_ttl_min: 600\n  cache_ttl_max: 3600\n  cache_optimistic: true\n  bogus_nxdomain: []\n  aaaa_disabled: false\n  enable_dnssec: true\n  edns_client_subnet:\n    custom_ip: \"\"\n    enabled: true\n    use_custom: false\n  max_goroutines: 500\n  handle_ddr: true\n  ipset: []\n  filtering_enabled: true\n  filters_update_interval: 24\n  parental_enabled: false\n  safesearch_enabled: false\n  safebrowsing_enabled: false\n  safebrowsing_cache_size: 1048576\n  safesearch_cache_size: 1048576\n  parental_cache_size: 1048576\n  cache_time: 30\n  rewrites: []\n  blocked_services: []\n  upstream_timeout: 5s\n  local_domain_name: lan\n  resolve_clients: true\n  use_private_ptr_resolvers: true\n  local_ptr_upstreams: []\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"adguard-config","namespace":"adguard"}}
+  name: adguard-config
+  namespace: adguard

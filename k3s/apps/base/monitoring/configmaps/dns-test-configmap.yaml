@@ -1,0 +1,120 @@
+apiVersion: v1
+data:
+  dns_test.py: "#!/usr/bin/env python3\nimport subprocess\nimport json\nimport sys\nimport
+    time\nimport requests\nfrom datetime import datetime\n\n# InfluxDB Configuration\nINFLUXDB_URL
+    = \"http://192.168.1.29:8086\"\nINFLUXDB_TOKEN = \"KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX\"
+    \ # Using the same token as speedtest\nINFLUXDB_ORG = \"influxdata\"\nINFLUXDB_BUCKET
+    = \"dns_test\"\n\ndef log_message(message):\n    \"\"\"Logs message with timestamp
+    to both console and log file\"\"\"\n    timestamp = datetime.now().strftime(\"%Y-%m-%d
+    %H:%M:%S\")\n    log_entry = f\"[{timestamp}] {message}\"\n    \n    # Print to
+    console\n    print(log_entry)\n    \n    # Append to log file\n    with open(\"/var/log/dns_test.log\",
+    \"a\") as log_file:\n        log_file.write(log_entry + \"\\n\")\n\ndef test_dns_resolution(domain,
+    dns_servers):\n    \"\"\"Tests DNS resolution for a domain using various DNS servers\"\"\"\n
+    \   results = []\n    \n    for dns_server in dns_servers:\n        log_message(f\"\U0001F50D
+    Testing DNS resolution for {domain} using DNS server {dns_server}...\")\n        \n
+    \       start_time = time.time()\n        try:\n            # Use the dig command
+    to query DNS\n            cmd = f\"dig @{dns_server} {domain} +short +time=2 +tries=1\"\n
+    \           result = subprocess.run(cmd, shell=True, capture_output=True, text=True)\n
+    \           \n            end_time = time.time()\n            response_time =
+    (end_time - start_time) * 1000  # Convert to milliseconds\n            \n            #
+    Check if we got a successful response\n            if result.stdout.strip():\n
+    \               ip_addresses = result.stdout.strip().split('\\n')\n                status
+    = \"success\"\n                log_message(f\"✅ DNS resolution successful: {domain}
+    → {', '.join(ip_addresses)} (DNS server: {dns_server}, response time: {response_time:.2f}ms)\")\n
+    \           else:\n                status = \"failed\"\n                log_message(f\"❌
+    DNS resolution failed for {domain} using DNS server {dns_server}\")\n                response_time
+    = 0\n            \n            results.append({\n                \"domain\": domain,\n
+    \               \"dns_server\": dns_server,\n                \"status\": status,\n
+    \               \"response_time\": response_time,\n                \"timestamp\":
+    datetime.now().isoformat()\n            })\n            \n        except Exception
+    as e:\n            log_message(f\"❌ ERROR: {e}\")\n            results.append({\n
+    \               \"domain\": domain,\n                \"dns_server\": dns_server,\n
+    \               \"status\": \"error\",\n                \"response_time\": 0,\n
+    \               \"timestamp\": datetime.now().isoformat()\n            })\n            \n
+    \   return results\n\ndef send_to_influxdb(results):\n    \"\"\"Sends DNS test
+    results to InfluxDB using the HTTP API\"\"\"\n    try:\n        # Prepare data
+    in Line Protocol format\n        lines = []\n        for result in results:\n
+    \           status_value = 1 if result[\"status\"] == \"success\" else 0\n            line
+    = f'dns_latency,domain={result[\"domain\"]},server={result[\"dns_server\"]} '
+    \\\n                   f'status={status_value},latency={result[\"response_time\"]}
+    ' \\\n                   f'{int(datetime.fromisoformat(result[\"timestamp\"]).timestamp()
+    * 1000000000)}'\n            lines.append(line)\n        \n        data = '\\n'.join(lines)\n
+    \       \n        # Send data to InfluxDB\n        headers = {\n            'Authorization':
+    f'Token {INFLUXDB_TOKEN}',\n            'Content-Type': 'text/plain'\n        }\n
+    \       \n        url = f\"{INFLUXDB_URL}/api/v2/write?org={INFLUXDB_ORG}&bucket={INFLUXDB_BUCKET}&precision=ns\"\n
+    \       response = requests.post(url, headers=headers, data=data)\n        \n
+    \       if response.status_code == 204:\n            log_message(\"✅ Data successfully
+    written to InfluxDB.\")\n        else:\n            log_message(f\"❌ Failed to
+    write data to InfluxDB. Status code: {response.status_code}, Response: {response.text}\")\n
+    \           \n    except Exception as e:\n        log_message(f\"❌ ERROR sending
+    data to InfluxDB: {e}\")\n\ndef main():\n    if len(sys.argv) < 3:\n        log_message(\"❌
+    ERROR: Insufficient arguments. Usage: python dns_test.py <domain> <dns_server1>
+    [dns_server2] ...\")\n        sys.exit(1)\n        \n    domain = sys.argv[1]\n
+    \   dns_servers = sys.argv[2:]\n    \n    log_message(f\"\U0001F680 Starting DNS
+    tests for {domain} using DNS servers: {', '.join(dns_servers)}\")\n    \n    #
+    Run DNS tests\n    results = test_dns_resolution(domain, dns_servers)\n    \n
+    \   # Send results to InfluxDB\n    send_to_influxdb(results)\n    \n    log_message(\"✅
+    DNS tests completed.\")\n\nif __name__ == \"__main__\":\n    main()\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: "{\"apiVersion\":\"v1\",\"data\":{\"dns_test.py\":\"#!/usr/bin/env
+      python3\\nimport subprocess\\nimport json\\nimport sys\\nimport time\\nimport
+      requests\\nfrom datetime import datetime\\n\\n# InfluxDB Configuration\\nINFLUXDB_URL
+      = \\\"http://192.168.1.29:8086\\\"\\nINFLUXDB_TOKEN = \\\"KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX\\\"
+      \ # Using the same token as speedtest\\nINFLUXDB_ORG = \\\"influxdata\\\"\\nINFLUXDB_BUCKET
+      = \\\"dns_test\\\"\\n\\ndef log_message(message):\\n    \\\"\\\"\\\"Logs message
+      with timestamp to both console and log file\\\"\\\"\\\"\\n    timestamp = datetime.now().strftime(\\\"%Y-%m-%d
+      %H:%M:%S\\\")\\n    log_entry = f\\\"[{timestamp}] {message}\\\"\\n    \\n    #
+      Print to console\\n    print(log_entry)\\n    \\n    # Append to log file\\n
+      \   with open(\\\"/var/log/dns_test.log\\\", \\\"a\\\") as log_file:\\n        log_file.write(log_entry
+      + \\\"\\\\n\\\")\\n\\ndef test_dns_resolution(domain, dns_servers):\\n    \\\"\\\"\\\"Tests
+      DNS resolution for a domain using various DNS servers\\\"\\\"\\\"\\n    results
+      = []\\n    \\n    for dns_server in dns_servers:\\n        log_message(f\\\"\U0001F50D
+      Testing DNS resolution for {domain} using DNS server {dns_server}...\\\")\\n
+      \       \\n        start_time = time.time()\\n        try:\\n            # Use
+      the dig command to query DNS\\n            cmd = f\\\"dig @{dns_server} {domain}
+      +short +time=2 +tries=1\\\"\\n            result = subprocess.run(cmd, shell=True,
+      capture_output=True, text=True)\\n            \\n            end_time = time.time()\\n
+      \           response_time = (end_time - start_time) * 1000  # Convert to milliseconds\\n
+      \           \\n            # Check if we got a successful response\\n            if
+      result.stdout.strip():\\n                ip_addresses = result.stdout.strip().split('\\\\n')\\n
+      \               status = \\\"success\\\"\\n                log_message(f\\\"✅
+      DNS resolution successful: {domain} → {', '.join(ip_addresses)} (DNS server:
+      {dns_server}, response time: {response_time:.2f}ms)\\\")\\n            else:\\n
+      \               status = \\\"failed\\\"\\n                log_message(f\\\"❌
+      DNS resolution failed for {domain} using DNS server {dns_server}\\\")\\n                response_time
+      = 0\\n            \\n            results.append({\\n                \\\"domain\\\":
+      domain,\\n                \\\"dns_server\\\": dns_server,\\n                \\\"status\\\":
+      status,\\n                \\\"response_time\\\": response_time,\\n                \\\"timestamp\\\":
+      datetime.now().isoformat()\\n            })\\n            \\n        except
+      Exception as e:\\n            log_message(f\\\"❌ ERROR: {e}\\\")\\n            results.append({\\n
+      \               \\\"domain\\\": domain,\\n                \\\"dns_server\\\":
+      dns_server,\\n                \\\"status\\\": \\\"error\\\",\\n                \\\"response_time\\\":
+      0,\\n                \\\"timestamp\\\": datetime.now().isoformat()\\n            })\\n
+      \           \\n    return results\\n\\ndef send_to_influxdb(results):\\n    \\\"\\\"\\\"Sends
+      DNS test results to InfluxDB using the HTTP API\\\"\\\"\\\"\\n    try:\\n        #
+      Prepare data in Line Protocol format\\n        lines = []\\n        for result
+      in results:\\n            status_value = 1 if result[\\\"status\\\"] == \\\"success\\\"
+      else 0\\n            line = f'dns_latency,domain={result[\\\"domain\\\"]},server={result[\\\"dns_server\\\"]}
+      ' \\\\\\n                   f'status={status_value},latency={result[\\\"response_time\\\"]}
+      ' \\\\\\n                   f'{int(datetime.fromisoformat(result[\\\"timestamp\\\"]).timestamp()
+      * 1000000000)}'\\n            lines.append(line)\\n        \\n        data =
+      '\\\\n'.join(lines)\\n        \\n        # Send data to InfluxDB\\n        headers
+      = {\\n            'Authorization': f'Token {INFLUXDB_TOKEN}',\\n            'Content-Type':
+      'text/plain'\\n        }\\n        \\n        url = f\\\"{INFLUXDB_URL}/api/v2/write?org={INFLUXDB_ORG}\\u0026bucket={INFLUXDB_BUCKET}\\u0026precision=ns\\\"\\n
+      \       response = requests.post(url, headers=headers, data=data)\\n        \\n
+      \       if response.status_code == 204:\\n            log_message(\\\"✅ Data
+      successfully written to InfluxDB.\\\")\\n        else:\\n            log_message(f\\\"❌
+      Failed to write data to InfluxDB. Status code: {response.status_code}, Response:
+      {response.text}\\\")\\n            \\n    except Exception as e:\\n        log_message(f\\\"❌
+      ERROR sending data to InfluxDB: {e}\\\")\\n\\ndef main():\\n    if len(sys.argv)
+      \\u003c 3:\\n        log_message(\\\"❌ ERROR: Insufficient arguments. Usage:
+      python dns_test.py \\u003cdomain\\u003e \\u003cdns_server1\\u003e [dns_server2]
+      ...\\\")\\n        sys.exit(1)\\n        \\n    domain = sys.argv[1]\\n    dns_servers
+      = sys.argv[2:]\\n    \\n    log_message(f\\\"\U0001F680 Starting DNS tests for
+      {domain} using DNS servers: {', '.join(dns_servers)}\\\")\\n    \\n    # Run
+      DNS tests\\n    results = test_dns_resolution(domain, dns_servers)\\n    \\n
+      \   # Send results to InfluxDB\\n    send_to_influxdb(results)\\n    \\n    log_message(\\\"✅
+  name: dns-test-configmap
+  namespace: monitoring

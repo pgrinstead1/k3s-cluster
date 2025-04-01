@@ -1,0 +1,74 @@
+apiVersion: v1
+data:
+  update-dns-patched-v2.sh: "#!/bin/sh\nset -e\n\nZONE_FILE=\"/etc/coredns/shared/k8s.internal.db\"\nTEMP_FILE=\"/tmp/k8s.internal.db.tmp\"\nDOMAIN=\"k8s.internal\"\nINTERVAL=\"30\"\nCLUSTERIP=$(kubectl
+    get svc -n kube-system kube-dns -o jsonpath='{.spec.clusterIP}')\n\n# Initialize
+    zone file if it doesn't exist\nif [ ! -f \"${ZONE_FILE}\" ]; then\n  echo \"Creating
+    initial zone file...\"\n  cat > \"${ZONE_FILE}\" << EOF\n${DOMAIN}. 300 IN SOA
+    ${DOMAIN}. hostmaster.${DOMAIN}. (\n           1     ; serial\n           300
+    \  ; refresh\n           300   ; retry\n           300   ; expire\n           300
+    ) ; minimum TTL\n@ IN NS ns1.${DOMAIN}.\nEOF\n  echo \"ns1 IN A ${CLUSTERIP}\"
+    >> \"${ZONE_FILE}\"\nfi\n\necho \"Starting DNS record synchronization for Kubernetes
+    services with domain ${DOMAIN}\"\necho \"Zone file: ${ZONE_FILE}\"\necho \"Update
+    interval: ${INTERVAL} seconds\"\n\n# Main loop\nwhile true; do\n  echo \"Scanning
+    for services with external-dns.alpha.kubernetes.io/hostname annotation...\"\n
+    \ \n  # Get services with the hostname annotation that match our domain\n  SERVICE_COUNT=0\n
+    \ \n  # Get current serial and increment it\n  SERIAL=$(date +%Y%m%d%H)\n  \n
+    \ # Create a temporary file for the new zone file\n  cat > \"${TEMP_FILE}\" <<
+    EOF\n${DOMAIN}. 300 IN SOA ${DOMAIN}. hostmaster.${DOMAIN}. (\n           ${SERIAL}
+    ; serial\n           300        ; refresh\n           300        ; retry \n           300
+    \       ; expire\n           300 )      ; minimum TTL\n@ IN NS ns1.${DOMAIN}.\nEOF\n
+    \ echo \"ns1 IN A ${CLUSTERIP}\" >> \"${TEMP_FILE}\"\n  \n  # Debug: List all
+    services with hostname annotation\n  echo \"DEBUG: Listing all services with hostname
+    annotation\"\n  kubectl get services --all-namespaces -o json | jq -r '.items[]
+    | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"])
+    | \"Service: \" + .metadata.name + \", Hostname: \" + .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]
+    + \", Has LoadBalancer IP: \" + (if .status.loadBalancer.ingress then \"yes\"
+    else \"no\" end)'\n  \n  # Get all services with hostname annotation and a LoadBalancer
+    IP\n  kubectl get services --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"])
+    | select(.status.loadBalancer.ingress != null) | .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]
+    + \" \" + (.status.loadBalancer.ingress[0].ip // \"\")' | while read HOSTNAME
+    IP; do\n    echo \"DEBUG: Processing service with hostname ${HOSTNAME} and IP
+    ${IP}\"\n    \n    # Only process k8s.internal domain - no conversion from other
+    domains\n    if [ -n \"${IP}\" ]; then\n      echo \"DEBUG: Checking if hostname
+    ${HOSTNAME} ends with .${DOMAIN}\"\n      \n      if echo \"${HOSTNAME}\" | grep
+    -q \"\\\\.${DOMAIN}$\"; then\n        echo \"DEBUG: Hostname ${HOSTNAME} ends
+    with .${DOMAIN}\"\n        # Extract just the hostname part (without the domain)\n
+    \       SHORTNAME=$(echo \"${HOSTNAME}\" | sed \"s/\\\\.${DOMAIN}$//\")\n        \n
+    \       echo \"Found ${HOSTNAME} -> ${IP} (shortname: ${SHORTNAME})\"\n        echo
+    \"${SHORTNAME} IN A ${IP}\" >> \"${TEMP_FILE}\"\n        SERVICE_COUNT=$((SERVICE_COUNT
+    + 1))\n      else\n        echo \"DEBUG: Hostname ${HOSTNAME} does not end with
+    .${DOMAIN} - ignoring\"\n      fi\n    else\n      echo \"DEBUG: Service has no
+    IP address\"\n    fi\n  done\n  \n  # Also get ingress resources with hostname
+    annotation\n  echo \"DEBUG: Listing all ingresses with hostname annotation\"\n
+    \ kubectl get ingress --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"])
+    | \"Ingress: \" + .metadata.name + \", Hostname: \" + .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]
+    + \", Has LoadBalancer IP: \" + (if .status.loadBalancer.ingress then \"yes\"
+    else \"no\" end)'\n  \n  kubectl get ingress --all-namespaces -o json | jq -r
+    '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"])
+    | select(.status.loadBalancer.ingress != null) | .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]
+    + \" \" + (.status.loadBalancer.ingress[0].ip // \"\")' | while read HOSTNAME
+    IP; do\n    echo \"DEBUG: Processing ingress with hostname ${HOSTNAME} and IP
+    ${IP}\"\n    \n    # Only process k8s.internal domain - no conversion from other
+    domains\n    if [ -n \"${IP}\" ]; then\n      echo \"DEBUG: Checking if hostname
+    ${HOSTNAME} ends with .${DOMAIN}\"\n      \n      if echo \"${HOSTNAME}\" | grep
+    -q \"\\\\.${DOMAIN}$\"; then\n        echo \"DEBUG: Hostname ${HOSTNAME} ends
+    with .${DOMAIN}\"\n        # Extract just the hostname part (without the domain)\n
+    \       SHORTNAME=$(echo \"${HOSTNAME}\" | sed \"s/\\\\.${DOMAIN}$//\")\n        \n
+    \       echo \"Found ingress ${HOSTNAME} -> ${IP} (shortname: ${SHORTNAME})\"\n
+    \       echo \"${SHORTNAME} IN A ${IP}\" >> \"${TEMP_FILE}\"\n        SERVICE_COUNT=$((SERVICE_COUNT
+    + 1))\n      else\n        echo \"DEBUG: Hostname ${HOSTNAME} does not end with
+    .${DOMAIN} - ignoring\"\n      fi\n    else\n      echo \"DEBUG: Ingress has no
+    IP address\"\n    fi\n  done\n  \n  echo \"Found ${SERVICE_COUNT} services/ingresses
+    with ${DOMAIN} hostnames\"\n  \n  # Replace zone file if changed\n  if ! diff
+    -q \"${ZONE_FILE}\" \"${TEMP_FILE}\" > /dev/null 2>&1; then\n    cp \"${TEMP_FILE}\"
+    \"${ZONE_FILE}\"\n    echo \"Zone file updated at $(date)\"\n    echo \"New zone
+    file contents:\"\n    cat \"${ZONE_FILE}\"\n  else\n    echo \"No changes to zone
+    file needed\"\n  fi\n  \n  # Sleep for the specified interval\n  echo \"Sleeping
+    for ${INTERVAL} seconds...\"\n  sleep ${INTERVAL}\ndone\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"update-dns-patched-v2.sh":"#!/bin/sh\nset -e\n\nZONE_FILE=\"/etc/coredns/shared/k8s.internal.db\"\nTEMP_FILE=\"/tmp/k8s.internal.db.tmp\"\nDOMAIN=\"k8s.internal\"\nINTERVAL=\"30\"\nCLUSTERIP=$(kubectl get svc -n kube-system kube-dns -o jsonpath='{.spec.clusterIP}')\n\n# Initialize zone file if it doesn't exist\nif [ ! -f \"${ZONE_FILE}\" ]; then\n  echo \"Creating initial zone file...\"\n  cat \u003e \"${ZONE_FILE}\" \u003c\u003c EOF\n${DOMAIN}. 300 IN SOA ${DOMAIN}. hostmaster.${DOMAIN}. (\n           1     ; serial\n           300   ; refresh\n           300   ; retry\n           300   ; expire\n           300 ) ; minimum TTL\n@ IN NS ns1.${DOMAIN}.\nEOF\n  echo \"ns1 IN A ${CLUSTERIP}\" \u003e\u003e \"${ZONE_FILE}\"\nfi\n\necho \"Starting DNS record synchronization for Kubernetes services with domain ${DOMAIN}\"\necho \"Zone file: ${ZONE_FILE}\"\necho \"Update interval: ${INTERVAL} seconds\"\n\n# Main loop\nwhile true; do\n  echo \"Scanning for services with external-dns.alpha.kubernetes.io/hostname annotation...\"\n  \n  # Get services with the hostname annotation that match our domain\n  SERVICE_COUNT=0\n  \n  # Get current serial and increment it\n  SERIAL=$(date +%Y%m%d%H)\n  \n  # Create a temporary file for the new zone file\n  cat \u003e \"${TEMP_FILE}\" \u003c\u003c EOF\n${DOMAIN}. 300 IN SOA ${DOMAIN}. hostmaster.${DOMAIN}. (\n           ${SERIAL} ; serial\n           300        ; refresh\n           300        ; retry \n           300        ; expire\n           300 )      ; minimum TTL\n@ IN NS ns1.${DOMAIN}.\nEOF\n  echo \"ns1 IN A ${CLUSTERIP}\" \u003e\u003e \"${TEMP_FILE}\"\n  \n  # Debug: List all services with hostname annotation\n  echo \"DEBUG: Listing all services with hostname annotation\"\n  kubectl get services --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]) | \"Service: \" + .metadata.name + \", Hostname: \" + .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"] + \", Has LoadBalancer IP: \" + (if .status.loadBalancer.ingress then \"yes\" else \"no\" end)'\n  \n  # Get all services with hostname annotation and a LoadBalancer IP\n  kubectl get services --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]) | select(.status.loadBalancer.ingress != null) | .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"] + \" \" + (.status.loadBalancer.ingress[0].ip // \"\")' | while read HOSTNAME IP; do\n    echo \"DEBUG: Processing service with hostname ${HOSTNAME} and IP ${IP}\"\n    \n    # Only process k8s.internal domain - no conversion from other domains\n    if [ -n \"${IP}\" ]; then\n      echo \"DEBUG: Checking if hostname ${HOSTNAME} ends with .${DOMAIN}\"\n      \n      if echo \"${HOSTNAME}\" | grep -q \"\\\\.${DOMAIN}$\"; then\n        echo \"DEBUG: Hostname ${HOSTNAME} ends with .${DOMAIN}\"\n        # Extract just the hostname part (without the domain)\n        SHORTNAME=$(echo \"${HOSTNAME}\" | sed \"s/\\\\.${DOMAIN}$//\")\n        \n        echo \"Found ${HOSTNAME} -\u003e ${IP} (shortname: ${SHORTNAME})\"\n        echo \"${SHORTNAME} IN A ${IP}\" \u003e\u003e \"${TEMP_FILE}\"\n        SERVICE_COUNT=$((SERVICE_COUNT + 1))\n      else\n        echo \"DEBUG: Hostname ${HOSTNAME} does not end with .${DOMAIN} - ignoring\"\n      fi\n    else\n      echo \"DEBUG: Service has no IP address\"\n    fi\n  done\n  \n  # Also get ingress resources with hostname annotation\n  echo \"DEBUG: Listing all ingresses with hostname annotation\"\n  kubectl get ingress --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]) | \"Ingress: \" + .metadata.name + \", Hostname: \" + .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"] + \", Has LoadBalancer IP: \" + (if .status.loadBalancer.ingress then \"yes\" else \"no\" end)'\n  \n  kubectl get ingress --all-namespaces -o json | jq -r '.items[] | select(.metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"]) | select(.status.loadBalancer.ingress != null) | .metadata.annotations[\"external-dns.alpha.kubernetes.io/hostname\"] + \" \" + (.status.loadBalancer.ingress[0].ip // \"\")' | while read HOSTNAME IP; do\n    echo \"DEBUG: Processing ingress with hostname ${HOSTNAME} and IP ${IP}\"\n    \n    # Only process k8s.internal domain - no conversion from other domains\n    if [ -n \"${IP}\" ]; then\n      echo \"DEBUG: Checking if hostname ${HOSTNAME} ends with .${DOMAIN}\"\n      \n      if echo \"${HOSTNAME}\" | grep -q \"\\\\.${DOMAIN}$\"; then\n        echo \"DEBUG: Hostname ${HOSTNAME} ends with .${DOMAIN}\"\n        # Extract just the hostname part (without the domain)\n        SHORTNAME=$(echo \"${HOSTNAME}\" | sed \"s/\\\\.${DOMAIN}$//\")\n        \n        echo \"Found ingress ${HOSTNAME} -\u003e ${IP} (shortname: ${SHORTNAME})\"\n        echo \"${SHORTNAME} IN A ${IP}\" \u003e\u003e \"${TEMP_FILE}\"\n        SERVICE_COUNT=$((SERVICE_COUNT + 1))\n      else\n        echo \"DEBUG: Hostname ${HOSTNAME} does not end with .${DOMAIN} - ignoring\"\n      fi\n    else\n      echo \"DEBUG: Ingress has no IP address\"\n    fi\n  done\n  \n  echo \"Found ${SERVICE_COUNT} services/ingresses with ${DOMAIN} hostnames\"\n  \n  # Replace zone file if changed\n  if ! diff -q \"${ZONE_FILE}\" \"${TEMP_FILE}\" \u003e /dev/null 2\u003e\u00261; then\n    cp \"${TEMP_FILE}\" \"${ZONE_FILE}\"\n    echo \"Zone file updated at $(date)\"\n    echo \"New zone file contents:\"\n    cat \"${ZONE_FILE}\"\n  else\n    echo \"No changes to zone file needed\"\n  fi\n  \n  # Sleep for the specified interval\n  echo \"Sleeping for ${INTERVAL} seconds...\"\n  sleep ${INTERVAL}\ndone\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"dns-sync-script","namespace":"kube-system"}}
+  name: dns-sync-script
+  namespace: kube-system

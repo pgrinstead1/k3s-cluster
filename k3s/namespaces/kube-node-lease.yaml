@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    field.cattle.io/projectId: local:p-8zbt8
+    lifecycle.cattle.io/create.namespace-auth: "true"
+    management.cattle.io/no-default-sa-token: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    field.cattle.io/projectId: p-8zbt8
+    kubernetes.io/metadata.name: kube-node-lease
+  name: kube-node-lease
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

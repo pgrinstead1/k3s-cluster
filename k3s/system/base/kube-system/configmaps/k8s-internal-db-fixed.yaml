@@ -1,0 +1,17 @@
+apiVersion: v1
+data:
+  k8s.internal.db: "k8s.internal. 300 IN SOA k8s.internal. hostmaster.k8s.internal.
+    (\n           2025031102 ; serial\n           300        ; refresh\n           300
+    \       ; retry \n           300        ; expire\n           300 )      ; minimum
+    TTL\nk8s.internal.     IN NS      ns1.k8s.internal.\nns1.k8s.internal. IN A       10.0.0.1\nrancher.k8s.internal.
+    \    IN A       10.0.0.10\nhomebridge.k8s.internal.  IN A       10.0.0.20\ngrafana.k8s.internal.
+    \    IN A       10.0.0.30\npihole.k8s.internal.      IN A       10.0.0.40\npihole-secondary.k8s.internal.
+    IN A  10.0.0.50\ninfluxdb.k8s.internal.    IN A       10.0.0.60\ntraefik.k8s.internal.
+    \    IN A       10.0.0.70\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"k8s.internal.db":"k8s.internal. 300 IN SOA k8s.internal. hostmaster.k8s.internal. (\n           2025031102 ; serial\n           300        ; refresh\n           300        ; retry \n           300        ; expire\n           300 )      ; minimum TTL\nk8s.internal.     IN NS      ns1.k8s.internal.\nns1.k8s.internal. IN A       10.0.0.1\nrancher.k8s.internal.     IN A       10.0.0.10\nhomebridge.k8s.internal.  IN A       10.0.0.20\ngrafana.k8s.internal.     IN A       10.0.0.30\npihole.k8s.internal.      IN A       10.0.0.40\npihole-secondary.k8s.internal. IN A  10.0.0.50\ninfluxdb.k8s.internal.    IN A       10.0.0.60\ntraefik.k8s.internal.     IN A       10.0.0.70\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"k8s-internal-db-fixed","namespace":"kube-system"}}
+  name: k8s-internal-db-fixed
+  namespace: kube-system

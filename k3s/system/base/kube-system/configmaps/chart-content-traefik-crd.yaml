@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    objectset.rio.cattle.io/applied: H4sIAAAAAAAA/4yST6vUMBTFv4rcdTK26at9Dbh6LgQRQcSNuLi5vZnGpklJMiPy6HeX1kHHP6Muk3B+Ofec+wi4uPecsosBNJxrEDC5MICGhxisO77GBQTMXHDAgqAfAUOIBYuLIW/HaD4xlczlkFw8EJbi+eDiU7cxRvazpBhKit5zkjRiKjLx0eWSdgaIm4T4OXCSx/N0AV09nWvx5JULw/OX7OeHDfpPTsCZQUNJyNZNktLwX5K8IG266WRY5i+58AyrAEq823/nZs4F5wV0OHkvwKNh/9dgRswjaLi7t7YZWmrqujNNpywNhG3Vd31re6u6SqGt2l5tv128f0tvi5NDkT9PcsurgH2Wt2w5cSDOoD/8Uvpv2YIA4yNNbzblC/a8F6Ut+swCftT5/eqyMddl/DHu074UhiprmXtpeqrkXdMpaRShpHtbNaSecTsoWD+u69cAAAD//9/EmX2dAgAA
+    objectset.rio.cattle.io/id: helm-controller-chart-registration
+    objectset.rio.cattle.io/owner-gvk: helm.cattle.io/v1, Kind=HelmChart
+    objectset.rio.cattle.io/owner-name: traefik-crd
+    objectset.rio.cattle.io/owner-namespace: kube-system
+  labels:
+    objectset.rio.cattle.io/hash: 48ff3d5c3117b372fcdca509795f9f2702af0592
+  name: chart-content-traefik-crd
+  namespace: kube-system
+  ownerReferences:
+  - apiVersion: helm.cattle.io/v1
+    blockOwnerDeletion: false
+    controller: false
+    kind: HelmChart
+    name: traefik-crd

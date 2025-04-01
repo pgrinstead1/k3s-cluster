@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Namespace","metadata":{"annotations":{},"name":"longhorn-system"}}
+    lifecycle.cattle.io/create.namespace-auth: "true"
+  finalizers:
+  - controller.cattle.io/namespace-auth
+  labels:
+    kubernetes.io/metadata.name: longhorn-system
+  name: longhorn-system
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

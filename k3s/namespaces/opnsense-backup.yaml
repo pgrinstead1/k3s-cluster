@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: opnsense-backup
+  name: opnsense-backup
+spec:
+  finalizers:
+  - kubernetes
+  phase: Active

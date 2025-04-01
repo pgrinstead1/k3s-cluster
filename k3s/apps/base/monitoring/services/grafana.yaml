@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: grafana.k8s.internal
+    field.cattle.io/publicEndpoints: '[{"addresses":["192.168.1.30"],"port":80,"protocol":"TCP","serviceName":"monitoring:grafana","allNodes":false}]'
+    meta.helm.sh/release-name: grafana
+    meta.helm.sh/release-namespace: monitoring
+    metallb.io/ip-allocated-from-pool: default-pool
+  finalizers:
+  - service.kubernetes.io/load-balancer-cleanup
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 11.5.2
+    helm.sh/chart: grafana-8.10.4
+  name: grafana
+  namespace: monitoring
+spec:
+  allocateLoadBalancerNodePorts: true
+  - 10.43.99.134
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 192.168.1.30
+  ports:
+  - name: service
+    nodePort: 32327
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+  sessionAffinity: None
+  type: LoadBalancer
+  loadBalancer:
+    ingress:
+    - ip: 192.168.1.30
+      ipMode: VIP

@@ -1,0 +1,16 @@
+apiVersion: v1
+data:
+  k8s.internal.db: "$ORIGIN k8s.internal.\n@ 300 IN SOA k8s.internal. hostmaster.k8s.internal.
+    (\n           2025031103 ; serial\n           300        ; refresh\n           300
+    \       ; retry \n           300        ; expire\n           300 )      ; minimum
+    TTL\n@     IN NS      ns1\nns1   IN A       192.168.1.1\nrancher     IN A       192.168.1.10\nhomebridge
+    \ IN A       192.168.1.20\ngrafana     IN A       192.168.1.30\npihole      IN
+    A       192.168.1.40\npihole-secondary IN A  192.168.1.50\ninfluxdb    IN A       192.168.1.60\ntraefik
+    \    IN A       192.168.1.70\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","data":{"k8s.internal.db":"$ORIGIN k8s.internal.\n@ 300 IN SOA k8s.internal. hostmaster.k8s.internal. (\n           2025031103 ; serial\n           300        ; refresh\n           300        ; retry \n           300        ; expire\n           300 )      ; minimum TTL\n@     IN NS      ns1\nns1   IN A       192.168.1.1\nrancher     IN A       192.168.1.10\nhomebridge  IN A       192.168.1.20\ngrafana     IN A       192.168.1.30\npihole      IN A       192.168.1.40\npihole-secondary IN A  192.168.1.50\ninfluxdb    IN A       192.168.1.60\ntraefik     IN A       192.168.1.70\n"},"kind":"ConfigMap","metadata":{"annotations":{},"name":"k8s-internal-db-fixed-2","namespace":"kube-system"}}
+  name: k8s-internal-db-fixed-2
+  namespace: kube-system

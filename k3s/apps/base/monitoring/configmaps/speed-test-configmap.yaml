@@ -1,0 +1,77 @@
+apiVersion: v1
+data:
+  speedtest-speedtest-cli.py: "import subprocess\nimport json\nimport influxdb_client\nfrom
+    influxdb_client.client.write_api import SYNCHRONOUS\nfrom datetime import datetime\n\n#
+    ✅ InfluxDB Configuration\nINFLUXDB_URL = \"http://192.168.1.29:8086\"\nINFLUXDB_TOKEN
+    = \"KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX\"  # Replace with your actual token\nINFLUXDB_ORG
+    = \"influxdata\"  # Replace with your org name\nINFLUXDB_BUCKET = \"speedtest\"\n\n#
+    ✅ Initialize InfluxDB Client\nclient = influxdb_client.InfluxDBClient(url=INFLUXDB_URL,
+    token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)\nwrite_api = client.write_api(write_options=SYNCHRONOUS)\n\ndef
+    log_message(message):\n    \"\"\"Logs message with timestamp to both console and
+    log file\"\"\"\n    timestamp = datetime.now().strftime(\"%Y-%m-%d %H:%M:%S\")\n
+    \   log_entry = f\"[{timestamp}] {message}\"\n    \n    # Print to console\n    print(log_entry)\n
+    \   \n    # Append to log file\n    with open(\"/var/log/speedtest.log\", \"a\")
+    as log_file:\n        log_file.write(log_entry + \"\\n\")\n\ndef run_speedtest():\n
+    \   \"\"\"Runs Ookla Speedtest CLI and sends results to InfluxDB\"\"\"\n    try:\n
+    \       log_message(\"\U0001F680 Running Speedtest...\")\n\n        # ✅ Run speedtest
+    with JSON output format and accept license\n        command = \"echo YES | speedtest
+    --format=json --accept-license --accept-gdpr --server-id 59970\"\n        result
+    = subprocess.run(command, shell=True, capture_output=True, text=True)\n\n        #
+    ✅ Parse JSON output\n        try:\n            data = json.loads(result.stdout)\n
+    \           \n            # ✅ Extract values from JSON\n            download_speed
+    = data.get('download', {}).get('bandwidth', 0) * 8 / 1_000_000  # Convert to Mbps\n
+    \           upload_speed = data.get('upload', {}).get('bandwidth', 0) * 8 / 1_000_000
+    \ # Convert to Mbps\n            ping = data.get('ping', {}).get('latency', 0)\n
+    \           \n            log_message(f\"✅ Results: Download = {download_speed:.2f}
+    Mbps, Upload = {upload_speed:.2f} Mbps, Ping = {ping:.2f} ms\")\n\n            #
+    ✅ Create InfluxDB Data Point\n            point = influxdb_client.Point(\"speedtest\")
+    \\\n                .field(\"download\", float(download_speed)) \\\n                .field(\"upload\",
+    float(upload_speed)) \\\n                .field(\"ping\", float(ping))\n\n            #
+    ✅ Write Data to InfluxDB\n            write_api.write(bucket=INFLUXDB_BUCKET,
+    record=point)\n            log_message(\"✅ Data successfully written to InfluxDB.\")\n
+    \       \n        except json.JSONDecodeError:\n            log_message(f\"❌ ERROR:
+    Failed to parse JSON output. Raw output: {result.stdout}\")\n            log_message(f\"❌
+    Standard error: {result.stderr}\")\n\n    except Exception as e:\n        log_message(f\"❌
+    ERROR: {e}\")\n\nif __name__ == \"__main__\":\n    run_speedtest()  # ✅ Runs ONCE
+    and exits\n"
+kind: ConfigMap
+metadata:
+  annotations:
+    field.cattle.io/description: speed-test-configmap
+    kubectl.kubernetes.io/last-applied-configuration: "{\"apiVersion\":\"v1\",\"data\":{\"speedtest-speedtest-cli.py\":\"import
+      subprocess\\nimport json\\nimport influxdb_client\\nfrom influxdb_client.client.write_api
+      import SYNCHRONOUS\\nfrom datetime import datetime\\n\\n# ✅ InfluxDB Configuration\\nINFLUXDB_URL
+      = \\\"http://192.168.1.29:8086\\\"\\nINFLUXDB_TOKEN = \\\"KP5DmiOssnh0yzh0Wg6WYqZDAIIi4lqX\\\"
+      \ # Replace with your actual token\\nINFLUXDB_ORG = \\\"influxdata\\\"  # Replace
+      with your org name\\nINFLUXDB_BUCKET = \\\"speedtest\\\"\\n\\n# ✅ Initialize
+      InfluxDB Client\\nclient = influxdb_client.InfluxDBClient(url=INFLUXDB_URL,
+      token=INFLUXDB_TOKEN, org=INFLUXDB_ORG)\\nwrite_api = client.write_api(write_options=SYNCHRONOUS)\\n\\ndef
+      log_message(message):\\n    \\\"\\\"\\\"Logs message with timestamp to both
+      console and log file\\\"\\\"\\\"\\n    timestamp = datetime.now().strftime(\\\"%Y-%m-%d
+      %H:%M:%S\\\")\\n    log_entry = f\\\"[{timestamp}] {message}\\\"\\n    \\n    #
+      Print to console\\n    print(log_entry)\\n    \\n    # Append to log file\\n
+      \   with open(\\\"/var/log/speedtest.log\\\", \\\"a\\\") as log_file:\\n        log_file.write(log_entry
+      + \\\"\\\\n\\\")\\n\\ndef run_speedtest():\\n    \\\"\\\"\\\"Runs Ookla Speedtest
+      CLI and sends results to InfluxDB\\\"\\\"\\\"\\n    try:\\n        log_message(\\\"\U0001F680
+      Running Speedtest...\\\")\\n\\n        # ✅ Run speedtest with JSON output format
+      and accept license\\n        command = \\\"echo YES | speedtest --format=json
+      --accept-license --accept-gdpr --server-id 59970\\\"\\n        result = subprocess.run(command,
+      shell=True, capture_output=True, text=True)\\n\\n        # ✅ Parse JSON output\\n
+      \       try:\\n            data = json.loads(result.stdout)\\n            \\n
+      \           # ✅ Extract values from JSON\\n            download_speed = data.get('download',
+      {}).get('bandwidth', 0) * 8 / 1_000_000  # Convert to Mbps\\n            upload_speed
+      = data.get('upload', {}).get('bandwidth', 0) * 8 / 1_000_000  # Convert to Mbps\\n
+      \           ping = data.get('ping', {}).get('latency', 0)\\n            \\n
+      \           log_message(f\\\"✅ Results: Download = {download_speed:.2f} Mbps,
+      Upload = {upload_speed:.2f} Mbps, Ping = {ping:.2f} ms\\\")\\n\\n            #
+      ✅ Create InfluxDB Data Point\\n            point = influxdb_client.Point(\\\"speedtest\\\")
+      \\\\\\n                .field(\\\"download\\\", float(download_speed)) \\\\\\n
+      \               .field(\\\"upload\\\", float(upload_speed)) \\\\\\n                .field(\\\"ping\\\",
+      float(ping))\\n\\n            # ✅ Write Data to InfluxDB\\n            write_api.write(bucket=INFLUXDB_BUCKET,
+      record=point)\\n            log_message(\\\"✅ Data successfully written to InfluxDB.\\\")\\n
+      \       \\n        except json.JSONDecodeError:\\n            log_message(f\\\"❌
+      ERROR: Failed to parse JSON output. Raw output: {result.stdout}\\\")\\n            log_message(f\\\"❌
+      Standard error: {result.stderr}\\\")\\n\\n    except Exception as e:\\n        log_message(f\\\"❌
+      ERROR: {e}\\\")\\n\\nif __name__ == \\\"__main__\\\":\\n    run_speedtest()
+  name: speed-test-configmap
+  namespace: monitoring

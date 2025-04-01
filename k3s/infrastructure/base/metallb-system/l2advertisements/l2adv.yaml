@@ -1,0 +1,13 @@
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"metallb.io/v1beta1","kind":"L2Advertisement","metadata":{"annotations":{},"name":"l2adv","namespace":"metallb-system"},"spec":{"ipAddressPools":["rancher-pool","default-pool"]}}
+  generation: 2
+  name: l2adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - rancher-pool
+  - default-pool
